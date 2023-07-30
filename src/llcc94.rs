@@ -72,7 +72,7 @@ impl Display for SyntaxKind {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct SyntaxToken {
     pub kind: SyntaxKind,
     start: usize,
@@ -283,6 +283,7 @@ impl Lexer {
 //parser produces sentences a.ka. trees
 struct Parser {
     text: String,
+    position: usize,
     tokens: Vec<SyntaxToken>,
 }
 impl Parser {
@@ -310,6 +311,19 @@ impl Parser {
         Parser {
             text: text.to_string(),
             tokens: _tokens,
+            position: 0,
         }
+    }
+
+    fn peek(&self, offset: usize) -> Option<SyntaxToken> {
+        let index = self.position + offset;
+        if index >= self.tokens.len() {
+            return Some(self.tokens[self.tokens.len() - 1].clone());
+        } else {
+            return Some(self.tokens[index].clone());
+        }
+    }
+    pub fn current(&self) -> SyntaxToken {
+        self.peek(0).unwrap()
     }
 }
