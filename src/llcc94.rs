@@ -281,7 +281,7 @@ impl Lexer {
 
 //lexer produces tokens...
 //parser produces sentences a.ka. trees
-struct Parser {
+pub struct Parser {
     text: String,
     position: usize,
     tokens: Vec<SyntaxToken>,
