@@ -1,4 +1,4 @@
-use ringo::llcc94::{Lexer, SyntaxKind, SyntaxToken};
+use ringo::llcc94::{Lexer, Parser, SyntaxKind, SyntaxToken};
 use std::io;
 
 fn main() {
@@ -17,6 +17,10 @@ fn main() {
         //init lexer for line grabbed from stdin buff
         let mut lexer = Lexer::new(line.as_str());
         println!("{:?}", lexer);
+
+        let mut parser = Parser::new(line.as_str());
+        let syntax_tree = parser.parse();
+        println!("{:#?}", syntax_tree);
 
         loop {
             let token = lexer.next_token().unwrap();

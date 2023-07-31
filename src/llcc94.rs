@@ -18,6 +18,7 @@ pub enum SyntaxKind {
 
     BadToken,
     EOFToken,
+    NumericExpressionSyntax,
 }
 impl Debug for SyntaxKind {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -38,6 +39,7 @@ impl Debug for SyntaxKind {
             SyntaxKind::PlusToken => write!(f, "PlusToken"),
             SyntaxKind::ForwardSlashToken => write!(f, "ForwardSlashToken"),
             SyntaxKind::BackwardSlashToken => write!(f, "BackwardSlashToken"),
+            SyntaxKind::NumericExpressionSyntax => write!(f, "NumericExpressionSyntax"),
 
             SyntaxKind::PipeToken => write!(f, "PipeToken"),
         }
@@ -66,6 +68,7 @@ impl Display for SyntaxKind {
             SyntaxKind::PlusToken => write!(f, "PlusToken"),
             SyntaxKind::ForwardSlashToken => write!(f, "ForwardSlashToken"),
             SyntaxKind::BackwardSlashToken => write!(f, "BackwardSlashToken"),
+            SyntaxKind::NumericExpressionSyntax => write!(f, "NumericExpressionSyntax"),
 
             SyntaxKind::PipeToken => write!(f, "PipeToken"),
         }
@@ -75,17 +78,17 @@ impl Display for SyntaxKind {
 #[derive(Clone, Debug)]
 pub struct SyntaxToken {
     pub kind: SyntaxKind,
-    start: usize,
+    pub position: usize,
     pub text: String,
     pub value: Option<i32>,
 }
 impl SyntaxToken {
-    pub fn new() -> SyntaxToken {
+    pub fn new(kind: SyntaxKind, position: usize, text: String, value: Option<i32>) -> SyntaxToken {
         SyntaxToken {
-            kind: SyntaxKind::WhiteSpaceToken,
-            start: 0,
-            text: "".to_string(),
-            value: None,
+            kind: kind,
+            position: 0,
+            text: text,
+            value: value,
         }
     }
 }
@@ -127,7 +130,7 @@ impl Lexer {
         if self.position >= self.text.len() {
             return Some(SyntaxToken {
                 kind: SyntaxKind::EOFToken,
-                start: self.position,
+                position: self.position,
                 text: "\0".to_string(),
                 value: None,
             });
@@ -143,7 +146,7 @@ impl Lexer {
             if let Ok(value) = text.parse::<i32>() {
                 return Some(SyntaxToken {
                     kind: SyntaxKind::NumberToken,
-                    start,
+                    position: start,
                     text,
                     value: Some(value),
                 });
@@ -152,7 +155,7 @@ impl Lexer {
                     .push(format!("The number {} isn't a valid Int32. ", text));
                 return Some(SyntaxToken {
                     kind: SyntaxKind::BadToken,
-                    start,
+                    position: start,
                     text,
                     value: None,
                 });
@@ -168,7 +171,7 @@ impl Lexer {
             let text = self.text[start..self.position].to_string();
             return Some(SyntaxToken {
                 kind: SyntaxKind::WhiteSpaceToken,
-                start,
+                position: start,
                 text,
                 value: None,
             });
@@ -179,7 +182,7 @@ impl Lexer {
                 self.next();
                 Some(SyntaxToken {
                     kind: SyntaxKind::PlusToken,
-                    start: self.position - 1,
+                    position: self.position - 1,
                     text: "+".to_string(),
                     value: None,
                 })
@@ -188,7 +191,7 @@ impl Lexer {
                 self.next();
                 Some(SyntaxToken {
                     kind: SyntaxKind::MinusToken,
-                    start: self.position - 1,
+                    position: self.position - 1,
                     text: "-".to_string(),
                     value: None,
                 })
@@ -197,7 +200,7 @@ impl Lexer {
                 self.next();
                 Some(SyntaxToken {
                     kind: SyntaxKind::StarToken,
-                    start: self.position - 1,
+                    position: self.position - 1,
                     text: "*".to_string(),
                     value: None,
                 })
@@ -206,7 +209,7 @@ impl Lexer {
                 self.next();
                 Some(SyntaxToken {
                     kind: SyntaxKind::ForwardSlashToken,
-                    start: self.position - 1,
+                    position: self.position - 1,
                     text: "/".to_string(),
                     value: None,
                 })
@@ -215,7 +218,7 @@ impl Lexer {
                 self.next();
                 Some(SyntaxToken {
                     kind: SyntaxKind::OpenParenthesisToken,
-                    start: self.position - 1,
+                    position: self.position - 1,
                     text: "(".to_string(),
                     value: None,
                 })
@@ -224,7 +227,7 @@ impl Lexer {
                 self.next();
                 Some(SyntaxToken {
                     kind: SyntaxKind::CloseParenthesisToken,
-                    start: self.position - 1,
+                    position: self.position - 1,
                     text: ")".to_string(),
                     value: None,
                 })
@@ -233,7 +236,7 @@ impl Lexer {
                 self.next();
                 Some(SyntaxToken {
                     kind: SyntaxKind::ForwardSlashToken,
-                    start: self.position - 1,
+                    position: self.position - 1,
                     text: ")".to_string(),
                     value: None,
                 })
@@ -242,7 +245,7 @@ impl Lexer {
                 self.next();
                 Some(SyntaxToken {
                     kind: SyntaxKind::BackwardSlashToken,
-                    start: self.position - 1,
+                    position: self.position - 1, //fka start..i.e position (index) where this current token starts from
                     text: "\\".to_string(),
                     value: None,
                 })
@@ -251,7 +254,7 @@ impl Lexer {
                 self.next();
                 Some(SyntaxToken {
                     kind: SyntaxKind::PipeToken,
-                    start: self.position - 1,
+                    position: self.position - 1,
                     text: "|".to_string(),
                     value: None,
                 })
@@ -260,7 +263,7 @@ impl Lexer {
                 self.next();
                 Some(SyntaxToken {
                     kind: SyntaxKind::EqualsToken,
-                    start: self.position - 1,
+                    position: self.position - 1,
                     text: "=".to_string(),
                     value: None,
                 })
@@ -270,7 +273,7 @@ impl Lexer {
                     .push(format!("ERROR: bad character input: '{}'", self.current()));
                 Some(SyntaxToken {
                     kind: SyntaxKind::BadToken,
-                    start: self.position,
+                    position: self.position,
                     text: self.text[self.position..self.position + 1].to_string(),
                     value: None,
                 })
@@ -290,21 +293,14 @@ impl Parser {
     pub fn new(text: &str) -> Parser {
         let mut lexer = Lexer::new(text);
         let mut _tokens: Vec<SyntaxToken> = Vec::new();
-        let mut token: SyntaxToken;
-        //let mut token = lexer.next_token();
-        // loop {
-        //     token = lexer.next_token();
-        //     if token.kind != SyntaxKind::WhiteSpaceToken && token.kind != SyntaxKind::BadToken {
-        //         _tokens.push(token);
-        //     } else if token.kind == SyntaxKind::EOFToken {
-        //         break;
-        //     }
-        // }
+        // let mut token: SyntaxToken;
         while let Some(token) = lexer.next_token() {
-            if token.kind != SyntaxKind::WhiteSpaceToken && token.kind != SyntaxKind::BadToken {
-                _tokens.push(token);
-            } else if token.kind == SyntaxKind::EOFToken {
+            if token.kind == SyntaxKind::EOFToken {
                 break;
+            } else if token.kind != SyntaxKind::WhiteSpaceToken
+                && token.kind != SyntaxKind::BadToken
+            {
+                _tokens.push(token);
             }
         }
 
@@ -326,4 +322,90 @@ impl Parser {
     pub fn current(&self) -> SyntaxToken {
         self.peek(0).unwrap()
     }
+
+    pub fn next_token(&mut self) -> SyntaxToken {
+        let current = self.current();
+        self.position += 1;
+        current
+    }
+
+    pub fn match_(&mut self, kind: SyntaxKind) -> SyntaxToken {
+        if self.current().kind == kind {
+            self.next_token().clone()
+        } else {
+            SyntaxToken::new(kind, self.current().position, String::new(), None)
+        }
+    }
+    fn match_token(&mut self, kind: SyntaxKind) -> SyntaxToken {
+        if self.current().kind == kind {
+            self.next_token().clone()
+        } else {
+            SyntaxToken::new(kind, self.current().position, String::new(), None)
+        }
+    }
+
+    pub fn parse(&mut self) -> ExpressionSyntax {
+        let mut left = self.parse_primary_expression();
+        while self.current().kind == SyntaxKind::PlusToken
+            || self.current().kind == SyntaxKind::MinusToken
+        {
+            let operator_token = self.next_token();
+            let right = self.parse_primary_expression();
+            left = ExpressionSyntax::BinaryExpression(BinaryExpressionSyntax {
+                left: Box::new(left),
+                operator_token,
+                right: Box::new(right),
+            });
+        }
+
+        left
+    }
+
+    fn parse_expression(&mut self) -> ExpressionSyntax {
+        let mut left = self.parse_primary_expression();
+
+        while self.current().kind == SyntaxKind::PlusToken
+            || self.current().kind == SyntaxKind::MinusToken
+        {
+            let operator_token = self.next_token();
+            let right = self.parse_primary_expression();
+            left = ExpressionSyntax::BinaryExpression(BinaryExpressionSyntax {
+                left: Box::new(left),
+                operator_token,
+                right: Box::new(right),
+            });
+        }
+
+        left
+    }
+
+    fn parse_primary_expression(&mut self) -> ExpressionSyntax {
+        let number_token = self.match_token(SyntaxKind::NumberToken);
+        ExpressionSyntax::NumericExpression(NumericExpressionSyntax { number_token })
+    }
+}
+
+//So to implement a SyntaxNode that we have other EpxressionSyntaxSubNodes extend from...
+// this means SyntaxNode abstract class in simpler languages C#, JAVA... it's much harder in Rust, Let me try...
+
+#[derive(Debug, Clone)]
+pub enum ExpressionSyntax {
+    NumericExpression(NumericExpressionSyntax),
+    BinaryExpression(BinaryExpressionSyntax),
+}
+// struct ExpressionSyntax {
+//     number_syntax: Option<NumericExpressionSyntax>,
+// }
+
+#[derive(Debug, Clone)]
+pub struct NumericExpressionSyntax {
+    number_token: SyntaxToken,
+    // kind: SyntaxKind,
+    // children: Vec<SyntaxToken>,
+}
+#[derive(Debug, Clone)]
+pub struct BinaryExpressionSyntax {
+    left: Box<ExpressionSyntax>,
+    operator_token: SyntaxToken,
+    right: Box<ExpressionSyntax>,
 }
