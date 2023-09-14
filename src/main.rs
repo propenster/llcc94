@@ -1,41 +1,28 @@
-use ringo::llcc94::{Lexer, Parser, SyntaxKind, SyntaxToken};
-use std::io;
+use std::{env, fs};
 
-fn main() {
-    println!("Welcome ringo compiler v0.0.1");
-    println!();
+//use lexer::Lexer;
 
-    //my repl
-    loop {
-        println!("> ");
-        let mut line = String::new();
-        io::stdin().read_line(&mut line).unwrap();
-        if line.is_empty() {
-            return;
-        }
+//use ringo::lexer::{ Lexer};
 
-        //init lexer for line grabbed from stdin buff
-        let mut lexer = Lexer::new(line.as_str());
-        println!("{:?}", lexer);
+mod lexer;
+mod token;
+mod parser;
+mod ast;
 
-        let mut parser = Parser::new(line.as_str());
-        let syntax_tree = parser.parse();
-        println!("{:#?}", syntax_tree);
+fn main(){
+    let file = env::args()
+        .nth(1)
+        .unwrap();
 
-        loop {
-            let token = lexer.next_token().unwrap();
-            if token.kind == SyntaxKind::EOFToken {
-                break;
-            }
+    let contents = fs::read_to_string(file).unwrap();
 
-            //println!("{}: '{}'", );
-            //if there is a value...
+    let lexer = lexer::Lexer::new(contents);
+    // while let Some(token) = lexer.next(){
+    //     println!("{:?}", token);
+    // }
+    let mut p = parser::Parser::new(lexer);
 
-            if let Some(tok) = token.value {
-                println!("{}: '{}' {}", token.kind, token.text, tok);
-            } else {
-                println!("{}: '{}'", token.kind, token.text);
-            }
-        } //end inner while...
-    } //end infinite loop..
+    let program = p.parse();
+    println!("{:?}", program);
+
 }
